@@ -21,3 +21,43 @@ void loop() {
   delay(15);                           // waits for the servo to get there
 }
 ```
+
+
+```avr
+
+
+#include <Servo.h>
+
+Servo myservo;
+int potpin = 0;
+int val;
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  // servo C
+  myservo.attach(7);
+  myservo.write(90);
+}
+
+void loop() {
+  // put you main code here, to run repeatedly:
+  val = analogRead(potpin);
+  //val = map(val,1023,0,0,180);
+  // 90 to 180  - 513 to 1023
+  // 0 to 90 - 0 to 512
+
+  // 512 to 0 - 91 to 180
+  if(val <= 512) {
+    val = map(val,512,0,91,180);
+  }
+  // 1023 to 513  - 0 to 90
+  if(val > 512) {
+    val = map(val,1023,513,0,90);
+  }
+  
+  Serial.println("pot value:");
+  Serial.println(val);
+  myservo.write(val);
+  delay(15);
+}
+```
