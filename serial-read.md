@@ -1,3 +1,5 @@
+
+```cpp
 int incomingByte = 0;   // for incoming serial data
 char s[5];
 void setup() {
@@ -18,3 +20,4 @@ void loop() {
                 //Serial.println(s);
         }
 }
+```

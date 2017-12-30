@@ -1,4 +1,5 @@
 
+```cpp
 /*
 https://playground.arduino.cc/Code/Timer1
 */
@@ -21,3 +22,4 @@ void loop()
 {
   // your program here...
 }
+```
