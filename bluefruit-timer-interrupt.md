@@ -2,6 +2,13 @@
 
 ```avr
 //main.cpp
+/*
+ * should switch modes when pressing 1,2,3,4
+ * should have max for servo D, C, B and A
+ * should write when pressing down
+ * should round float before it sends to myservo.write()
+ */
+
 /*********************************************************************
  This is an example for our nRF51822 based Bluefruit LE modules
 
@@ -15,17 +22,15 @@
  All text above, and the splash screen below must be included in
  any redistribution
 *********************************************************************/
-
+#include <TimerOne.h>
 #include <string.h>
 #include <Arduino.h>
 #include <SPI.h>
-#include <Servo.h>
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
 #include "Adafruit_BluefruitLE_UART.h"
 
 #include "BluefruitConfig.h"
-
 
 #if SOFTWARE_SERIAL_AVAILABLE
   #include <SoftwareSerial.h>
@@ -67,17 +72,25 @@
     #define MODE_LED_BEHAVIOUR          "MODE"
 /*=========================================================================*/
 
+// Create the bluefruit object, either software serial...uncomment these lines
+/*
+SoftwareSerial bluefruitSS = SoftwareSerial(BLUEFRUIT_SWUART_TXD_PIN, BLUEFRUIT_SWUART_RXD_PIN);
 
+Adafruit_BluefruitLE_UART ble(bluefruitSS, BLUEFRUIT_UART_MODE_PIN,
+                      BLUEFRUIT_UART_CTS_PIN, BLUEFRUIT_UART_RTS_PIN);
+*/
+
+/* ...or hardware serial, which does not need the RTS/CTS pins. Uncomment this line */
+// Adafruit_BluefruitLE_UART ble(BLUEFRUIT_HWSERIAL_NAME, BLUEFRUIT_UART_MODE_PIN);
 
 /* ...hardware SPI, using SCK/MOSI/MISO hardware SPI pins and then user selected CS/IRQ/RST */
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 
+/* ...software SPI, using SCK/MOSI/MISO user-defined SPI pins and then user selected CS/IRQ/RST */
+//Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_SCK, BLUEFRUIT_SPI_MISO,
+//                             BLUEFRUIT_SPI_MOSI, BLUEFRUIT_SPI_CS,
+//                             BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
 
-Servo servo_C;
-const int SERVO_C_PIN = 9;
-int serv_C_val = 0;
-int serv_C_movement = 10;
-bool serv_C_move = false;
 
 // A small helper
 void error(const __FlashStringHelper*err) {
@@ -94,16 +107,35 @@ void printHex(const uint8_t * data, const uint32_t numBytes);
 extern uint8_t packetbuffer[];
 
 
-// down means 0 to 90 max
+/**************************************************************************/
+/*!
+    @brief  Sets up the HW an the BLE module (this function is called
+            automatically on startup)
+*/
+/**************************************************************************/
+
+
+volatile int buttnum_glob  = 0;
+volatile bool pressed_glob = false;
+volatile bool released_glob = false;
+volatile bool do_increment = false;
+//volatile int the_number = 0;
+volatile float the_number = 0.0;
+const int minVal = 0;
+const int maxVal = 180;
+
 void setup(void)
 {
-
   while (!Serial);  // required for Flora & Micro
   delay(500);
+  // 20,000 microseconds -> 20 ms
+  Timer1.initialize(20000);
+  Timer1.attachInterrupt(handleControl);
 
+  Timer1.attachInterrupt(incrementNumber);
+  pinMode(LED_BUILTIN, OUTPUT);
+  
   Serial.begin(115200);
-  servo_C.attach(SERVO_C_PIN);
-  servo_C.write(0);
   Serial.println(F("Adafruit Bluefruit App Controller Example"));
   Serial.println(F("-----------------------------------------"));
 
@@ -195,44 +227,16 @@ void loop(void)
     uint8_t buttnum = packetbuffer[2] - '0';
     boolean pressed = packetbuffer[3] - '0';
     Serial.print ("Button "); Serial.print(buttnum);
-    // bad
-    /*
-    while(pressed) {
-      if(buttnum == 6) {
-        serv_C_val = ++serv_C_val;
-        Serial.println(" pressed");
-        Serial.println(serv_C_val);
-        delay(15);
-      } 
-    }
-    if(!pressed) {
-     Serial.println(" resealed"); 
-    }*/
-    
     if (pressed) {
-      
       Serial.println(" pressed");
-      if(buttnum == 6) {
-        if(serv_C_val <= 90) {
-          serv_C_val = serv_C_val + serv_C_movement;
-          servo_C.write(serv_C_val);
-         }
-               
-        Serial.println(serv_C_val); 
-      }
-      if(buttnum == 5) {
-        if(serv_C_val > 0) {
-          serv_C_val = serv_C_val - serv_C_movement;
-          servo_C.write(serv_C_val);
-         }
-               
-        Serial.println(serv_C_val); 
-      }
-
-
+      pressed_glob = true;
+      released_glob = false;
     } else {
+      released_glob = true;
+      pressed_glob = false;
       Serial.println(" released");
-      serv_C_move = false;
+      Serial.println("the number: ");
+      Serial.println(the_number);
     }
   }
 
@@ -300,6 +304,37 @@ void loop(void)
     Serial.print(w); Serial.println();
   }
 }
+
+void handleControl()
+{
+  if(pressed_glob == true){
+    do_increment = true;
+  }
+  if(released_glob == true) {
+    do_increment = false;
+  }
+}
+
+void incrementNumber()
+{
+  int deg;
+  //the_number = the_number + 2;
+ 
+ if(pressed_glob == true)
+ {
+  // 180 deg every 5 seconds 
+  the_number = the_number + 0.72;
+  //deg = (int) the_number;
+  // myservo.write(deg);
+ }
+ 
+ /*
+ else{
+   the_number = 0;
+ }*/
+}
+
+
 ```
 
 ```avr
