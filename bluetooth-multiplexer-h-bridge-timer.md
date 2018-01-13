@@ -89,18 +89,20 @@ volatile bool three_released = false;
 volatile bool four_pressed = false;
 volatile bool four_released = false;
 
-const int servoA_pin = 13;
-const int servoB_pin = 12;
+const int servoA_pin = 6;
+const int servoB_pin = 9;
 
-volatile float servoA_angle = 0.0;
-const float servoA_min = 0.0;
-const float servoA_max = 110.0;
+volatile float servoA_angle = 0;
+const int servoA_min = 0;
+const int servoA_max = 110;
 volatile float servoB_angle = 0.0;
-const float servoB_min = 0.0;
-const float servoB_max = 180.0;
+const int servoB_min = 0;
+const int servoB_max = 180;
 
 Servo servoA;  // create servo object to control a servo
 Servo servoB;
+int pos_A = 0;
+int pos_B = 0;
 void setup(void)
 {
   //while (!Serial);  // required for Flora & Micro
@@ -116,8 +118,11 @@ void setup(void)
   //setRegisterPin(pinB1, HIGH);
   //setRegisterPin(pinB2, HIGH);
   writeRegisters(); //MUST BE CALLED TO DISPLAY CHANGES
-  /*
-  servoA.attach(servoA_pin);  
+  
+  servoA.attach(6);
+ 
+  servoB.attach(9);  
+   /*
   servoA.write((int)servoA_min);
 
   
@@ -200,19 +205,7 @@ void setup(void)
 
 }
 
-/*
-void setupMotorPins(void) {
-  pinMode(enA, OUTPUT);
-  pinMode(enB, OUTPUT);
-  pinMode(pinA1, OUTPUT);
-  pinMode(pinA2, OUTPUT);
-  pinMode(pinB1, OUTPUT);
-  pinMode(pinB2, OUTPUT);
-  
-  digitalWrite(enA, HIGH);
-  digitalWrite(enB, HIGH);
-}
-*/
+
 
 /**************************************************************************/
 /*!
@@ -234,6 +227,8 @@ void loop(void)
     uint8_t buttnum = packetbuffer[2] - '0';
     boolean pressed = packetbuffer[3] - '0';
     Serial.print ("Button "); Serial.print(buttnum);
+    //handle_button(buttnum);
+    
     if (pressed) {
       Serial.println(" pressed");
       if(buttnum == 5) {
@@ -256,7 +251,47 @@ void loop(void)
           leftForward();
           rightBackward();
       }
+      if(buttnum == 1) {
+          Serial.print("one");
+           one_pressed = true;
+           one_released = false;
+           pos_A = pos_A - 30;
+           if(pos_A >= servoA_max) {
+            pos_A = servoA_max;
+            }
+           
+      }
+      if(buttnum == 2) {
+          Serial.print("two");
+          two_pressed = true;
+          two_released = false;
+           pos_A = pos_A + 30;
+           if(pos_A >= servoA_max) {
+            pos_A = servoA_max;
+           }
+      }
 
+      if(buttnum == 3) {
+          Serial.print("three");
+          three_pressed = true;
+          three_released = false;
+          pos_B = pos_B - 30;
+           if(pos_B >= servoB_max) {
+            pos_B = servoB_max;
+            }
+          
+      }
+      if(buttnum == 4) {
+          Serial.print("four");
+          four_pressed = true;
+          four_released = false;
+          pos_B = pos_B + 30;
+          if(pos_B >= servoB_max) {
+            pos_B = servoB_max;
+           }
+        
+      }
+      
  
       
     } else {
@@ -266,10 +301,46 @@ void loop(void)
       // right brake
       leftBrake();
       rightBrake();
+
+      if(buttnum == 1) {
+          Serial.print("one");
+           one_pressed = false;
+           one_released = true;
+          //int a = (int)servoA_angle;
+          servoA.write(pos_A);
+          delay(15);
+
+      }
+      if(buttnum == 2) {
+          Serial.print("two");
+          two_pressed = false;
+          two_released = true;
+          //int a = (int)servoA_angle;
+          servoA.write(pos_A);
+          delay(15);
+      }
+
+      if(buttnum == 3) {
+          Serial.print("three");
+          three_pressed = false;
+          three_released = true;
+          servoB.write(pos_B);
+          delay(15);
+          
+      }
+      if(buttnum == 4) {
+          Serial.print("four");
+          four_pressed = false;
+          four_released = true;
+          servoB.write(pos_B);
+          delay(15);
+        
+      }
       
       //handle_release_button(buttnum);
       Serial.println("servo A: ");
       Serial.println(servoA_angle);
+
 
       Serial.println("servo B: ");
       Serial.println(servoB_angle);
@@ -279,12 +350,76 @@ void loop(void)
 }
 
 
-void onLight(void){
+void onLight(void) {
   digitalWrite(LED_BUILTIN, HIGH);
 }
-void offLight(void){
+void offLight(void) {
   digitalWrite(LED_BUILTIN, LOW);
 }
+
+
+void handle_button(uint8_t buttnum) {
+  
+   switch(buttnum)
+  {
+
+    case 5:
+      Serial.println("up");
+       leftForward();
+       rightForward();
+      break;
+    case 6:
+      Serial.println("down");
+      leftBackward();
+      rightBackward();
+      break;
+    case 7:
+      Serial.println("left");
+      leftBackward();
+      rightForward();
+      break;
+    case 8:
+      Serial.println("right");
+      rightBackward();
+      leftForward();
+      break;
+    case 1:
+      Serial.println("one");
+      one_pressed = true;
+      one_released = false;
+      //leftBrake();
+      //rightBrake();
+      break;
+    case 2:
+      Serial.println("two");
+      two_pressed = true;
+      two_released = false;
+      //leftBrake();
+      //rightBrake();
+      break;
+    case 3:
+      Serial.println("three");
+      three_pressed = true;
+      three_released = false;
+      //leftBrake();
+      //rightBrake();
+      break;
+    case 4:
+      Serial.println("four");
+      four_pressed = true;
+      four_released = false;
+      //leftBrake();
+      //rightBrake();
+      break;
+    
+    default: 
+      Serial.println("default");
+      
+      
+  }
+  //delay(10);
+}
+
 
 void handle_release_button(uint8_t buttnum)
 {
@@ -348,91 +483,17 @@ void handle_release_button(uint8_t buttnum)
 }
 
 
-void handle_button(uint8_t buttnum){
-  
-   switch(buttnum)
-  {
-
-    case 5:
-      Serial.println("up");
-      up_pressed = true;
-
-      break;
-    case 6:
-      Serial.println("down");
-      //leftBackward();
-      //rightBackward();
-      break;
-    case 7:
-      Serial.println("left");
-      //leftBackward();
-      //rightForward();
-      break;
-    case 8:
-      Serial.println("right");
-      //rightBackward();
-      //leftForward();
-      break;
-    
-    case 1:
-      Serial.println("one");
-      one_pressed = true;
-      one_released = false;
-      //leftBrake();
-      //rightBrake();
-      break;
-    case 2:
-      Serial.println("two");
-      two_pressed = true;
-      two_released = false;
-      //leftBrake();
-      //rightBrake();
-      break;
-    case 3:
-      Serial.println("three");
-      three_pressed = true;
-      three_released = false;
-      //leftBrake();
-      //rightBrake();
-      break;
-    case 4:
-      Serial.println("four");
-      four_pressed = true;
-      four_released = false;
-      //leftBrake();
-      //rightBrake();
-      break;
-    
-    default: 
-      Serial.println("default");
-      
-  }
-  //delay(10);
-}
-
 void addAngle()
 {
-  int deg;
-  //the_number = the_number + 2;
 
- if(up_pressed == true)
- {
-    //rightForward();
-    //leftForward();
- }
-  if(down_pressed == true)
+if(one_pressed == true)
  {
   
- }
-
-  if(left_pressed == true)
- {
-  
- }
-
-  if(right_pressed == true)
- {
-  
+   servoA_angle = servoA_angle - 0.72;
+   if(servoA_angle <= servoA_min) {
+    servoA_angle = servoA_min;
+   }
+   //servoA.write((int)servoA_angle);
  }
  
  if(two_pressed == true)
@@ -443,17 +504,9 @@ void addAngle()
   if(servoA_angle >= servoA_max) {
     servoA_angle = servoA_max;
   }
-  //deg = (int) the_number;
-  // myservo.write(deg);
+   //servoA.write((int)servoA_angle);
  }
- if(one_pressed == true)
- {
-  
-   servoA_angle = servoA_angle - 0.72;
-   if(servoA_angle <= servoA_min) {
-    servoA_angle = servoA_min;
-   }
- }
+ 
   if(four_pressed == true)
  {
   
@@ -461,6 +514,7 @@ void addAngle()
    if(servoB_angle >= servoB_max) {
     servoB_angle = servoB_max;
     }
+    
  }
 
   if(three_pressed == true)
